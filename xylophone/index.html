@@ -91,7 +91,23 @@ input::placeholder,textarea::placeholder{color:#b3b9c2}
 .sample button{width:100%}
 .sample p{margin:0;font-size:11px;color:#8a2a26;line-height:1.5}
 .tabbar{display:none}
-@media (max-width:800px){
+
+/* 音名ボタン */
+.notepad{display:flex;flex-wrap:wrap;gap:5px}
+.notepad button{flex:1 0 auto;min-width:42px;padding:8px 6px;font-size:15px;border-radius:8px;line-height:1.1}
+.notepad button.nk{border-color:transparent}
+.notepad button.fn{background:#f1f3f6}
+.notepad .lab{width:100%;font-size:11px;color:var(--sub)}
+/* スマホ用の楽譜表示 */
+.mview{width:100%;display:flex;flex-direction:column;gap:12px}
+.mhd{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:4px 4px 0}
+.mhd b{font-size:20px;font-weight:900}
+.mhd small{font-size:12px;color:var(--sub)}
+.msys{background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.1);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.msys svg{display:block}
+.sp-only{display:none}
+@media (max-width:800px), (max-height:500px) and (pointer:coarse){
+  span.sp-only{display:inline} p.sp-only{display:block}
   html,body{height:auto}
   .app{display:block;height:auto}
   .side{border-right:none;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:96px}
@@ -110,7 +126,7 @@ input::placeholder,textarea::placeholder{color:#b3b9c2}
 }
 @media print{
   html,body{background:#fff;height:auto}
-  .side,.tabbar{display:none!important}
+  .side,.tabbar,.pad{display:none!important}
   .app{display:block}
   .stage{padding:0;gap:0;overflow:visible;display:block}
   .pagewrap{width:auto!important;height:auto!important}
@@ -142,6 +158,7 @@ input::placeholder,textarea::placeholder{color:#b3b9c2}
       <legend>音の入力（1行＝1段）</legend>
       <textarea id="notes" spellcheck="false" placeholder="例：&#10;ドドソソララソー&#10;ファファミミレレドー">ドドソソララソー
 ファファミミレレドー</textarea>
+      <div class="notepad" data-for="notes" aria-label="音名ボタン"></div>
       <p class="hint">ド・レ・ミ・ファ・ソ・ラ・シ（ひらがな可）か、鍵盤の番号 1〜8 を1マスずつ並べます。高いドは <b>ド'</b> か <b>8</b> です。<b>ー</b> で直前の音を1マス伸ばし、<b>_</b> か <b>休</b> で1マス休み。スペースは無視します。<br>2本同時に叩くときは <b>[13]</b> や <b>[ドミ]</b> のように角かっこで囲みます。</p>
       <p class="warn" id="warn" hidden></p>
       <button id="clearData">入力をクリア</button>
@@ -186,7 +203,8 @@ input::placeholder,textarea::placeholder{color:#b3b9c2}
       </div>
       <label class="inline"><input type="checkbox" id="loopPlay">くり返し再生</label>
       <p class="soundsrc" id="soundSrc"></p>
-      <p class="hint" id="playState">再生中の音は楽譜の上で枠が付きます。</p>
+      <p class="hint" id="playState">再生中の音は楽譜の上で枠が付き、その段まで自動でスクロールします。</p>
+      <p class="hint ios-only" hidden>iPhone・iPadで音が出ないときは、消音モード（サイレントスイッチ）をオフにして、音量を上げてください。</p>
     </fieldset>
 
     <fieldset>
@@ -195,6 +213,7 @@ input::placeholder,textarea::placeholder{color:#b3b9c2}
       <button id="saveFile">保存（.json をダウンロード）</button>
       <label>保存したデータを開く<input type="file" id="loadFile" accept=".json,application/json"></label>
       <p class="hint" id="fileState">曲名・音・用紙・鍵盤設定・テンポ・差し替えた写真をまとめて保存します。</p>
+      <p class="hint sp-only">スマホで保存したファイルは、iPhoneは「ファイル」アプリの「ダウンロード」、Androidは「ダウンロード」フォルダに入ります。開くときは「保存したデータを開く」からそのファイルを選びます。</p>
     </fieldset>
 
     <div class="btns">
@@ -202,7 +221,7 @@ input::placeholder,textarea::placeholder{color:#b3b9c2}
       <button id="openPad">演奏パッドを開く</button>
       <button id="reset">初期状態に戻す</button>
     </div>
-    <p class="hint">印刷ダイアログで用紙サイズを同じもの（例：A3）にし、倍率は100%・余白なしにしてください。入力内容はこのブラウザに自動保存されます。</p>
+    <p class="hint">印刷ダイアログで用紙サイズを同じもの（例：A3）にし、倍率は100%・余白なしにしてください。入力内容はこのブラウザに自動保存されます。<span class="sp-only"><br>スマホからは、印刷画面で「PDFとして保存」（iPhoneは共有ボタン→「ファイルに保存」）しておき、パソコンやコンビニのプリンタでA3印刷すると確実です。</span></p>
   </aside>
 
   <main class="stage" id="stage"></main>
@@ -221,6 +240,7 @@ input::placeholder,textarea::placeholder{color:#b3b9c2}
     <div class="board" id="board"></div>
     <img class="pad-img" id="padImg" alt="シロホン">
     <p class="pad-note">鍵盤をタップすると音が鳴ります。押したまま横になぞると、グリッサンドもできます。</p>
+    <p class="pad-note ios-only" hidden>音が出ないときは、消音モード（サイレントスイッチ）をオフにしてください。</p>
   </div>
 </div>
 
@@ -236,6 +256,8 @@ const DEF_COLORS = {1:"#e8413c",2:"#f39a2b",3:"#f5cf2e",4:"#7cc443",5:"#5bc0eb",
 const PAPER = {A3:[297,420], A4:[210,297], B4:[257,364]};
 const PX = 3.7795;
 const $ = id => document.getElementById(id);
+const MQ="(max-width:800px), (max-height:500px) and (pointer:coarse)"; // スマホ表示に切り替える条件（横向きのスマホも含む）
+function isMobileView(){ return !window._printMode && window.matchMedia(MQ).matches; }
 
 // 鍵盤設定の入力欄をつくる
 (function(){
@@ -412,12 +434,24 @@ function render(){
   let cols=parseInt($("cols").value)||0;
   if(cols<=0){ const m=Math.max(barU,...lines.map(l=>l.len)); cols=Math.ceil(m/barU)*barU; }
   const barsPerLine=Math.ceil(cols/barU);
+  { const mx=Math.max(0,...lines.map(l=>l.len));
+    if(mx>cols){ const w=$("warn"), msg=`「1段のマス数」（${cols}）より長い行があります。はみ出た部分は表示・再生されません。`;
+      w.textContent=w.hidden?msg:(w.textContent+" / "+msg); w.hidden=false; } }
   lastParsed={lines,cols,beat};
 
   const pages=[]; for(let i=0;i<Math.max(lines.length,1);i+=per) pages.push(lines.slice(i,i+per));
   const pad=12*k;
   const stage=$("stage"); stage.innerHTML="";
-  const mobile=window.matchMedia("(max-width:800px)").matches;
+  if(!stage.offsetWidth){ save(); return; } // 非表示中は描かない（表示したときに描き直す）
+  if(isMobileView()){ // スマホ：紙の枠をやめて1段ずつ大きく
+    const km=0.82, Hm=Math.round((22+(showCount?44:6))*km+8*24);
+    let h=`<div class="mview"><div class="mhd"><b>${esc($("title").value)}</b><small>${esc($("sub").value)}</small></div>`;
+    for(let i=0;i<Math.max(lines.length,1);i++) h+=`<div class="msys"></div>`;
+    stage.innerHTML=h+`</div>`;
+    stage.querySelectorAll(".msys").forEach((el,li)=>{ const line=lines[li]||{notes:[],len:0}; el.innerHTML=systemSVG(line,li,Math.max(el.clientWidth,Math.round(84*km+cols*24)),Hm,cols,beat,perBar,li*barsPerLine+1,names,colors,km,showCount); });
+    save(); return;
+  }
+  const mobile=window.matchMedia(MQ).matches;
   const avail=Math.max(stage.clientWidth-(mobile?16:48),280);
   const scale=Math.min(1, avail/(W*PX));
 
@@ -467,7 +501,14 @@ function synthBuffer(f){ // 録音が届くまでの仮の鉄琴の音（基音�
   }
   return buf;
 }
+let _audioP=null;
 async function ensureAudio(){
+  if(!_audioP) _audioP=_loadAudio();
+  try{ await _audioP; }catch(e){ _audioP=null; throw e; }
+  if(actx.state==="suspended") await actx.resume();
+}
+async function _loadAudio(){
+  try{ if(navigator.audioSession) navigator.audioSession.type="playback"; }catch(e){}
   if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
   if(actx.state==="suspended") await actx.resume();
   if(!buffers){
@@ -490,7 +531,18 @@ function strike(p,t0,master,gain){
   playing.push(src);
   src.onended=()=>{const i=playing.indexOf(src); if(i>=0) playing.splice(i,1);};
 }
+let _lastSys=null;
+function markPlaying(sel){
+  const els=document.querySelectorAll(sel); els.forEach(e=>e.classList.add("playing"));
+  const sys=els[0]&&els[0].closest(".msys,.sys");
+  if(sys&&sys!==_lastSys){ _lastSys=sys; sys.scrollIntoView({behavior:"smooth",block:isMobileView()?"center":"nearest"}); }
+  if(sys&&els[0]&&sys.classList.contains("msys")&&sys.scrollWidth>sys.clientWidth){ // 横に長い段は、鳴っている音が見える位置まで横にも動かす
+    const r=els[0].getBoundingClientRect(), m=sys.getBoundingClientRect();
+    if(r.left<m.left||r.right>m.right) sys.scrollTo({left:sys.scrollLeft+(r.left-m.left)-m.width/3,behavior:"smooth"});
+  }
+}
 function stopPlay(msg){
+  _lastSys=null;
   setPlayLabel(false);
   playToken++;
   playing.forEach(s=>{try{s.stop()}catch(e){}}); playing=[];
@@ -500,7 +552,9 @@ function stopPlay(msg){
 }
 async function startPlay(){
   stopPlay();
+  const myToken=playToken;
   try{ await ensureAudio(); }catch(e){ $("playState").textContent="音を鳴らせませんでした："+e.message; return; }
+  if(myToken!==playToken) return; // 読み込み中に別の再生・停止が押された
   const token=playToken;
   const {lines,cols,beat}=lastParsed;
   if(!lines.length){ $("playState").textContent="音が入力されていません。"; return; }
@@ -517,7 +571,7 @@ async function startPlay(){
       const gain=n.ps.length>1?0.6:0.8;
       n.ps.forEach(p=>strike(p,t0+at,master,gain));
       const sel=`.nt[data-n="${li}-${ni}"]`;
-      timers.push(setTimeout(()=>{ if(token===playToken) document.querySelectorAll(sel).forEach(e=>e.classList.add("playing")); },(0.12+at)*1000));
+      timers.push(setTimeout(()=>{ if(token===playToken) markPlaying(sel); },(0.12+at)*1000));
       timers.push(setTimeout(()=>{ document.querySelectorAll(sel).forEach(e=>e.classList.remove("playing")); },(0.12+at+Math.max(0.08,d*0.9))*1000));
     });
     total=base+cols*unit;
@@ -560,7 +614,7 @@ $("loadFile").addEventListener("change",e=>{
       if(d.app!==APP_ID||!d.fields) throw new Error("このソフトで保存したファイルではありません");
       stopPlay(); apply(d.fields); imgSrc=d.img||DEFAULT_IMG; render();
       $("fileState").textContent=`「${f.name}」を読み込みました。`;
-    }catch(err){ $("fileState").textContent="読み込めませんでした："+err.message; }
+    }catch(err){ $("fileState").textContent="読み込めませんでした："+(err instanceof SyntaxError?"ファイルの中身が壊れているか、このソフトの形式ではありません":err.message); }
     e.target.value="";
   };
   rd.readAsText(f);
@@ -654,10 +708,46 @@ const SAMPLE={title:"きらきら星",sub:"シロホン・リズム譜",meta:"4/
 $("sampleBtn").addEventListener("click",()=>{
   stopPlay();
   Object.entries(SAMPLE).forEach(([k,v])=>{$(k).value=v;});
-  if(window.matchMedia("(max-width:800px)").matches) setTab("score"); else render();
+  if(window.matchMedia(MQ).matches) setTab("score"); else render();
   startPlay();
 });
 document.body.dataset.tab="edit";
+
+// ===== 音名ボタン（タップで入力） =====
+const NOTEPADS={"notes": [["ド", "ド", "#e8413c"], ["レ", "レ", "#f39a2b"], ["ミ", "ミ", "#f5cf2e"], ["ファ", "ファ", "#7cc443"], ["ソ", "ソ", "#5bc0eb"], ["ラ", "ラ", "#2c3f9e"], ["シ", "シ", "#b39ddb"], ["ド'", "ド'", "#f48fb1"]]};
+const _sel={};
+function _inkc(hex){const n=parseInt(hex.slice(1),16),r=n>>16&255,g=n>>8&255,b=n&255;return (0.299*r+0.587*g+0.114*b)>170?"#3a3220":"#fff";}
+function padInsert(id,txt){
+  const ta=$(id), focused=document.activeElement===ta;
+  let [s,e]=focused?[ta.selectionStart,ta.selectionEnd]:(_sel[id]||[ta.value.length,ta.value.length]);
+  s=Math.min(s,ta.value.length); e=Math.min(e,ta.value.length);
+  if(txt==="BS"){
+    if(s!==e) ta.setRangeText("",s,e,"end");
+    else if(s>0){
+      const before=ta.value.slice(0,s); let n=1;
+      if(/(ファ|ド')$/.test(before)) n=2;
+      else if(before.endsWith("]")&&before.lastIndexOf("[")>=0) n=before.length-before.lastIndexOf("[");
+      ta.setRangeText("",s-n,s,"end");
+    }
+  } else ta.setRangeText(txt,s,e,"end");
+  _sel[id]=[ta.selectionStart,ta.selectionEnd];
+  ta.dispatchEvent(new Event("input",{bubbles:true}));
+}
+document.querySelectorAll(".notepad").forEach(box=>{
+  const id=box.dataset.for, ta=$(id);
+  const remember=()=>{ _sel[id]=[ta.selectionStart,ta.selectionEnd]; };
+  ["keyup","click","input","select","blur"].forEach(ev=>ta.addEventListener(ev,remember));
+  const keys=[...(NOTEPADS[id]||[]),["ー","ー"],["休","_"],["改行","\n"],["⌫","BS"]];
+  keys.forEach(([label,txt,col])=>{
+    const b=document.createElement("button"); b.type="button"; b.textContent=label;
+    if(col){ b.className="nk"; b.style.background=col; b.style.color=_inkc(col); } else b.className="fn";
+    b.setAttribute("aria-label",label==="⌫"?"1つ消す":label==="改行"?"改行":label+"を入力");
+    b.addEventListener("pointerdown",e=>e.preventDefault()); // 入力欄のフォーカス（キーボード）をそのままにする
+    b.addEventListener("click",()=>padInsert(id,txt));
+    box.appendChild(b);
+  });
+});
+if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)) document.querySelectorAll(".ios-only").forEach(e=>e.hidden=false);
 
 load();
 FIELDS.forEach(f=>$(f).addEventListener("input",render));
@@ -665,7 +755,11 @@ $("img").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f) return;
   const rd=new FileReader(); rd.onload=()=>{imgSrc=rd.result; render();}; rd.readAsDataURL(f);
 });
-$("print").addEventListener("click",()=>window.print());
+function ensureScoreForPrint(){ window._printMode=true; if(!$("stage").offsetWidth){ document.body.dataset.tab="score"; document.querySelectorAll("#tabbar [data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab==="score")); } render(); }
+$("print").addEventListener("click",()=>{ ensureScoreForPrint(); setTimeout(()=>window.print(),60); });
+window.addEventListener("beforeprint",()=>{ if(!window._printMode) ensureScoreForPrint(); });
+window.addEventListener("afterprint",()=>{ if(window._printMode){ window._printMode=false; render(); } });
+document.addEventListener("pointerdown",e=>{ if(window._printMode&&!(e.target.closest&&e.target.closest("#print"))){ window._printMode=false; setTimeout(render,0); } },true);
 $("reset").addEventListener("click",()=>{try{localStorage.removeItem(STORE)}catch(e){} location.reload();});
 window.addEventListener("resize",render);
 render();
