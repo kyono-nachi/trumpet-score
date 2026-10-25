@@ -117,7 +117,14 @@ input::placeholder,textarea::placeholder{color:#b3b9c2}
 .msys{background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.1);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
 .msys svg{display:block}
 .sp-only{display:none}
+.dtool{position:fixed;bottom:20px;left:calc(340px + (100vw - 340px)/2);transform:translateX(-50%);z-index:30;display:flex;gap:10px;
+  background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:999px;padding:8px;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.dtool button{border-radius:999px;padding:12px 22px;font-size:16px;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.dtool button b{font-size:18px;line-height:1}
+.dtool button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.stage{padding-bottom:110px}
 @media (max-width:800px), (max-height:500px) and (pointer:coarse){
+  .dtool{display:none!important}
   span.sp-only{display:inline} p.sp-only{display:block}
   html,body{height:auto}
   .app{display:block;height:auto}
@@ -135,6 +142,7 @@ input::placeholder,textarea::placeholder{color:#b3b9c2}
   .kb{padding:8px 8px 10px;border-radius:12px}
 }
 @media print{
+  .dtool{display:none!important}
   html,body{background:#fff;height:auto}
   .side,.tabbar,.pad{display:none!important}
   .app{display:block}
@@ -232,6 +240,8 @@ input::placeholder,textarea::placeholder{color:#b3b9c2}
 
   <main class="stage" id="stage"></main>
 </div>
+
+<nav class="dtool" id="dtool" aria-label="よく使う操作"><button id="dPlay" class="on" title="楽譜を最初から再生します"><b>▶</b><span>再生</span></button><button id="dPad" title="楽器のボタンで自由に鳴らせます"><b>●</b>演奏パッド</button><button id="dPrint" title="楽譜を印刷します"><b>⎙</b>印刷</button></nav>
 
 <nav class="tabbar" id="tabbar">
   <button data-tab="edit" class="on"><b>✎</b>入力</button>
@@ -692,6 +702,8 @@ $("clearData").addEventListener("click",()=>{
 
 // ===== スマホ用タブ・サンプル =====
 function setPlayLabel(on){
+  const d=document.getElementById("dPlay");
+  if(d){ d.dataset.on=on?"1":""; d.querySelector("b").textContent=on?"■":"▶"; d.querySelector("span").textContent=on?"停止":"再生"; }
   const b=document.getElementById("tabPlay"); if(!b) return;
   b.dataset.on=on?"1":"";
   b.querySelector("b").textContent=on?"■":"▶";
@@ -756,6 +768,11 @@ document.querySelectorAll(".notepad").forEach(box=>{
   });
 });
 if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)) document.querySelectorAll(".ios-only").forEach(e=>e.hidden=false);
+
+// ===== パソコン用の浮かぶボタン =====
+$("dPlay").addEventListener("click",()=>{ if($("dPlay").dataset.on){ stopPlay("停止しました。"); } else startPlay(); });
+$("dPad").addEventListener("click",openPad);
+$("dPrint").addEventListener("click",()=>$("print").click());
 
 load();
 FIELDS.forEach(f=>$(f).addEventListener("input",render));
