@@ -462,12 +462,22 @@ let _audioP=null;
 async function ensureAudio(){
   if(!_audioP) _audioP=_loadAudio();
   try{ await _audioP; }catch(e){ _audioP=null; throw e; }
-  if(actx.state==="suspended") await actx.resume();
+  if(actx.state!=="running") await Promise.race([actx.resume().catch(()=>{}), new Promise(r=>setTimeout(r,400))]);
 }
+// スマホは「指を離した／タップ完了」の操作でしか音の許可が出ないので、その時点で必ず許可を取る
+function unlockAudio(){
+  try{ if(navigator.audioSession) navigator.audioSession.type="playback"; }catch(e){}
+  try{
+    if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state!=="running") actx.resume().catch(()=>{});
+    const b=actx.createBuffer(1,1,22050), s=actx.createBufferSource(); s.buffer=b; s.connect(actx.destination); s.start(0); // 無音を1回鳴らして許可を確定
+  }catch(e){}
+}
+["touchend","pointerup","click","keydown"].forEach(ev=>document.addEventListener(ev,unlockAudio,{capture:true,passive:true}));
 async function _loadAudio(){
   try{ if(navigator.audioSession) navigator.audioSession.type="playback"; }catch(e){}
   if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
-  if(actx.state==="suspended") await actx.resume();
+  if(actx.state!=="running") actx.resume().catch(()=>{});
   if(!buffers){
     buffers={};
     for(const [k,v] of Object.entries(SAMPLES)){
